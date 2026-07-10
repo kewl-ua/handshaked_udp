@@ -1,21 +1,6 @@
-#pragma once
-
 #include <stdint.h>
 
-#define PACKED __attribute__((packed))
-
-#define CRSF_BAUDRATE           420000
-#define CRSF_NUM_CHANNELS 16
-#define CRSF_CHANNEL_VALUE_MIN  172
-#define CRSF_CHANNEL_VALUE_1000 191
-#define CRSF_CHANNEL_VALUE_MID  992
-#define CRSF_CHANNEL_VALUE_2000 1792
-#define CRSF_CHANNEL_VALUE_MAX  1811
-#define CRSF_CHANNEL_VALUE_SPAN (CRSF_CHANNEL_VALUE_MAX - CRSF_CHANNEL_VALUE_MIN)
-#define CRSF_MAX_PACKET_LEN 64
-
-// Clashes with CRSF_ADDRESS_FLIGHT_CONTROLLER
-#define CRSF_SYNC_BYTE 0XC8
+#include "crsf.h"
 
 enum {
     CRSF_FRAME_LENGTH_ADDRESS = 1, // length of ADDRESS field
