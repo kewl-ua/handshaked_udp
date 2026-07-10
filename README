@@ -1,0 +1,44 @@
+# Handshaked UDP Link (CRSF 250 Hz over Starlink)
+
+A minimalist network protocol written in pure C (POSIX Sockets) for bidirectional transmission of **TBS CRSF** control and telemetry streams at **250 Hz** between a UAV (Drone) and a Ground Control Station (GCS). 
+
+This project is explicitly designed to handle the strict routing constraints of satellite internet (**Starlink CGNAT**) directly, without relying on third-party VPNs, proxies, or relay servers.
+
+---
+
+## 🛰 Background & The Problem
+
+When building internet-connected drones (routing control over cellular or satellite networks), standard UDP communication topologies fail due to provider-level network architectures:
+
+1. **No Public IP on the Drone:** Starlink (like most LTE/5G carriers) uses **CGNAT (Carrier-Grade NAT)**. The drone does not have a unique external public IP address, making it impossible to establish an inbound connection from the internet.
+2. **Strict Symmetric NAT:** Starlink routers dynamically close inactive UDP ports and aggressively randomize or change the drone's external port mid-session (e.g., during satellite handovers in the constellation).
+3. **Latency-Critical Timing (250 Hz / 4ms):** Drone control protocols (CRSF/ELRS) demand precise, deterministic timing. Layering heavy overlay networks (VPNs, WireGuard, Tailscale) or using guaranteed delivery protocols (TCP, KCP) introduces unacceptable encryption overhead and jitter caused by retransmitting lost packets. In RC piloting, old packets are useless—only the most recent state matters.
+
+---
+
+## 🛠 Solution Architecture
+
+Instead of utilizing an external proxy or relay server, this protocol implements dynamic session retention (**UDP Hole Punching / Keep-Alive**) directly at the application layer running at 250 Hz.
+
+### Communication Flow:
+1. **The Ground Station (GCS)** hosts a static, public IPv4 address and listens on a fixed UDP port.
+2. **The Drone** boots up, generates a random `Session ID`, and bursts `CONN_REQ` packets to the GCS. This outbound packet forces Starlink's CGNAT to map and open an ephemeral external port.
+3. **The GCS** receives the request, extracts the Starlink public IP and dynamic port via `recvfrom`, verifies the `Session ID`, and replies with a `CONN_ACK`. The Handshake is complete.
+4. **Flight Mode:** The drone continuously pushes telemetry packets (`MSG_DATA`) every 4 ms. The GCS immediately mirrors back RC channel control packets to the exact address it just read.
+
+### Connection Migration (Starlink Port-Hop Protection):
+If Starlink drops the port mapping mid-flight and assigns a completely new external port to the drone, the GCS detects this instantly (within 4 ms) via the next incoming telemetry packet's metadata inside `recvfrom`. The GCS validates the `Session ID` and instantly re-routes the outbound control stream to the new port without dropping the session.
+
+---
+
+## 📦 Packet Structure
+
+The network protocol header is packed down to a mere **2 bytes** to minimize airtime and data overhead at high packet rates:
+
+```text
+  0                   1                   2
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 2 3 ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |  Packet Type  |   Session ID  |  CRSF Payload |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
