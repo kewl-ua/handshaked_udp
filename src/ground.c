@@ -7,11 +7,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-#define MSG_CONN_REQ 0x01
-#define MSG_CONN_ACK 0x02
-#define MSG_DATA 0x03
-#define PORT 5555
-
+#include "protocol.h"
 
 int main() {
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -26,7 +22,7 @@ int main() {
     memset(&gnd_addr, 0, sizeof(gnd_addr));
 
     gnd_addr.sin_family = AF_INET;
-    gnd_addr.sin_port = htons(PORT);
+    gnd_addr.sin_port = htons(DEFAULT_PORT);
     gnd_addr.sin_addr.s_addr = INADDR_ANY;
 
     if (bind(sock, (struct sockaddr*)&gnd_addr, sizeof(gnd_addr)) < 0) {
@@ -35,7 +31,7 @@ int main() {
         return 1;
     }
 
-    printf("[GND] Server running on port %d. Waiting for drone...\n", PORT);
+    printf("[GND] Server running on port %d. Waiting for drone...\n", DEFAULT_PORT);
 
     struct sockaddr_in drone_addr;
     socklen_t addr_len = sizeof(drone_addr);

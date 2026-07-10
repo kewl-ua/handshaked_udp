@@ -10,10 +10,8 @@
 #include <time.h>
 #include <sys/time.h>
 
-#define MSG_CONN_REQ 0x01
-#define MSG_CONN_ACK 0x02
-#define MSG_DATA 0x03
-#define PORT 5555
+#include "protocol.h"
+
 #define GND_IP "10.255.0.2" // GND public IP
 
 int main() {
@@ -34,7 +32,7 @@ int main() {
     memset(&gnd_addr, 0, sizeof(gnd_addr));
     
     gnd_addr.sin_family = AF_INET;
-    gnd_addr.sin_port = htons(PORT);
+    gnd_addr.sin_port = htons(DEFAULT_PORT);
     inet_pton(AF_INET, GND_IP, &gnd_addr.sin_addr);
 
     // 200 ms timeout for Handshake stage
