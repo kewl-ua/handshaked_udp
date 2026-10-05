@@ -17,6 +17,7 @@
 
 // Wire format v1, spelled out here so the tests also pin the format down
 #define WIRE_CONN_REQ 0x01
+#define WIRE_CONN_ACK 0x02
 #define WIRE_DATA 0x03
 
 static void step(void) {
@@ -104,6 +105,32 @@ static void test_keepalive_holds_idle_link(void) {
 
     CHECK(client.events[HUDP_EVENT_LOST] == 0 && server.events[HUDP_EVENT_LOST] == 0);
     CHECK(client.events[HUDP_EVENT_DATA] == 0 && server.events[HUDP_EVENT_DATA] == 0); // Keep-alives are not delivered
+}
+
+static void test_server_answers_keepalive(void) {
+    hudp_config_t cfg = fast_config();
+    uint8_t req[2] = { WIRE_CONN_REQ, 0x2A };
+    uint8_t keepalive[2] = { WIRE_DATA, 0x2A };
+    uint8_t buf[16];
+
+    cfg.keepalive_interval_ms = 1000; // So the server's own keep-alive can't be mistaken for the answer
+    server.h = hudp_server_new(TEST_PORT, &cfg);
+    CHECK(server.h != NULL);
+
+    // A hand-made client: handshake, then one keep-alive
+    int raw = raw_socket();
+
+    raw_send(raw, req, sizeof(req));
+    WAIT_FOR(server.events[HUDP_EVENT_CONNECTED] > 0, 500);
+    CHECK(recv(raw, buf, sizeof(buf), MSG_DONTWAIT) == 2 && buf[0] == WIRE_CONN_ACK);
+
+    raw_send(raw, keepalive, sizeof(keepalive));
+    PUMP(50);
+
+    // Answered at once, while the client's NAT mapping is freshly open
+    CHECK(recv(raw, buf, sizeof(buf), MSG_DONTWAIT) == 2 && buf[0] == WIRE_DATA && buf[1] == 0x2A);
+
+    close(raw);
 }
 
 static void test_foreign_conn_req_is_ignored(void) {
@@ -218,6 +245,7 @@ int main(void) {
     run("handshake", test_handshake, NULL);
     run("data both ways", test_data_both_ways, NULL);
     run("keep-alive holds an idle link", test_keepalive_holds_idle_link, NULL);
+    run("server answers a keep-alive", test_server_answers_keepalive, NULL);
     run("foreign CONN_REQ is ignored", test_foreign_conn_req_is_ignored, NULL);
     run("migration to a new port", test_migration_to_new_port, NULL);
     run("client reconnects after loss", test_client_reconnects_after_loss, NULL);

@@ -163,6 +163,11 @@ static rx_result_t server_receive(hudp_t *h, hudp_event_t *ev, uint8_t type, uin
 
     h->last_rx_ms = now;
 
+    if (moved) {
+        // The NAT gave the client a new external port: from now on replies go there
+        h->peer = *from;
+    }
+
     hudp_event_t data_ev = {
         .type = HUDP_EVENT_DATA,
         .session_id = session,
@@ -170,9 +175,13 @@ static rx_result_t server_receive(hudp_t *h, hudp_event_t *ev, uint8_t type, uin
         .len = len - HUDP_HEADER_SIZE,
     };
 
+    if (data_ev.len == 0) {
+        // Answer a keep-alive at once: it has just refreshed the client's NAT mapping, so the answer
+        // gets through even when the mapping times out sooner than the next keep-alive comes
+        send_packet(h, MSG_DATA, NULL, 0);
+    }
+
     if (moved) {
-        // The NAT gave the client a new external port: from now on replies go there
-        h->peer = *from;
         ev->type = HUDP_EVENT_MIGRATED;
 
         if (data_ev.len > 0) {
