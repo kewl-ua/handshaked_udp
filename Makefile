@@ -6,32 +6,30 @@ INC_DIR = include
 BIN_DIR = bin
 OBJ_DIR = obj
 
-TARGET_DRONE = $(BIN_DIR)/drone
-TARGET_GROUND = $(BIN_DIR)/ground
+TARGET_CLIENT = $(BIN_DIR)/client
+TARGET_SERVER = $(BIN_DIR)/server
 
-COMMON_SRC = $(SRC_DIR)/crsf.c
-DRONE_SRC = $(SRC_DIR)/drone.c
-GROUND_SRC = $(SRC_DIR)/ground.c
+CLIENT_SRC = $(SRC_DIR)/client.c
+SERVER_SRC = $(SRC_DIR)/server.c
 
-COMMON_OBJ = $(OBJ_DIR)/crsf.o
-DRONE_OBJ = $(OBJ_DIR)/drone.o
-GROUND_OBJ = $(OBJ_DIR)/ground.o
+CLIENT_OBJ = $(OBJ_DIR)/client.o
+SERVER_OBJ = $(OBJ_DIR)/server.o
 
-all: create_dirs $(TARGET_DRONE) $(TARGET_GROUND)
+all: create_dirs $(TARGET_CLIENT) $(TARGET_SERVER)
 
 create_dirs:
 	@mkdir -p $(BIN_DIR)
 	@mkdir -p $(OBJ_DIR)
 
-# Building drone part
-$(TARGET_DRONE): $(DRONE_OBJ) $(COMMON_OBJ)
+# Building client part
+$(TARGET_CLIENT): $(CLIENT_OBJ)
 	$(CC) $(CFLAGS) $^ -o $@
-	@echo "[SUCCESS] Drone binaries built: $@"
+	@echo "[SUCCESS] Client binaries built: $@"
 
-# Building ground part
-$(TARGET_GROUND): $(GROUND_OBJ) $(COMMON_OBJ)
+# Building server part
+$(TARGET_SERVER): $(SERVER_OBJ)
 	$(CC) $(CFLAGS) $^ -o $@
-	@echo "[SUCCESS] Ground binaries built: $@"
+	@echo "[SUCCESS] Server binaries built: $@"
 
 # Universal rule for object files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c

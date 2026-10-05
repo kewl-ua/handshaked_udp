@@ -12,7 +12,7 @@
 
 #include "protocol.h"
 
-#define GND_IP "10.255.0.2" // GND public IP
+#define SERVER_IP "10.255.0.2" // Server public IP
 
 int main() {
     struct timeval tv;
@@ -27,20 +27,20 @@ int main() {
         return 1;
     }
 
-    struct sockaddr_in gnd_addr;
+    struct sockaddr_in server_addr;
 
-    memset(&gnd_addr, 0, sizeof(gnd_addr));
+    memset(&server_addr, 0, sizeof(server_addr));
     
-    gnd_addr.sin_family = AF_INET;
-    gnd_addr.sin_port = htons(DEFAULT_PORT);
-    inet_pton(AF_INET, GND_IP, &gnd_addr.sin_addr);
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(DEFAULT_PORT);
+    inet_pton(AF_INET, SERVER_IP, &server_addr.sin_addr);
 
     // 200 ms timeout for Handshake stage
     tv.tv_sec = 0;
     tv.tv_usec = 200000;
     setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
-    printf("[DRONE] Knocking the ground side %s... Session %d\n", GND_IP, session_id);
+    printf("[CLIENT] Knocking the server %s... Session %d\n", SERVER_IP, session_id);
 
     // 1. Handshake
     bool connected = false;
@@ -56,8 +56,8 @@ int main() {
             tx_buffer,
             2,
             0,
-            (struct sockaddr*)&gnd_addr,
-            sizeof(gnd_addr)
+            (struct sockaddr*)&server_addr,
+            sizeof(server_addr)
         );
 
         struct sockaddr_in from_addr;
@@ -67,52 +67,51 @@ int main() {
             rx_buffer,
             sizeof(rx_buffer),
             0,
-            (struct sockaddr*)&gnd_addr,
+            (struct sockaddr*)&server_addr,
             &from_len
         );
 
         if (res >= 2 && rx_buffer[0] == MSG_CONN_ACK && rx_buffer[1] == session_id) {
             connected = true; 
-            printf("[DRONE] Ground responded! Connection established.\n");
+            printf("[CLIENT] Server responded! Connection established.\n");
         } else {
-            printf("[DRONE] No response, retry in 500 ms...\n");
+            printf("[CLIENT] No response, retry in 500 ms...\n");
             usleep(500000);
         }
     }
 
-    // 2. CRSF
-    // Strict 5 ms timeout  
+    // 2. Data exchange
+    // Strict 5 ms timeout
     tv.tv_usec = 5000;
     setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
     tx_buffer[0] = MSG_DATA;
     tx_buffer[1] = session_id;
 
-    size_t crsf_packet_size = 2 + 26; // Heads + 26 bytes for CRSF frame
+    size_t packet_size = 2 + 26; // Headers + 26 bytes of payload
 
     while (true) {
-        // Filling tx_buffer[2...] with frech telemetry from FC UART
+        // Filling tx_buffer[2...] with fresh payload
         // ...
 
-        // Sending every 4 sec for keeping alive Starlink CGNAT port reservation
+        // Sending every 4 ms also keeps the NAT port mapping alive
         sendto(
             sock,
             tx_buffer,
-            crsf_packet_size,
+            packet_size,
             0,
-            (struct sockaddr*)&gnd_addr,
-            sizeof(gnd_addr)
+            (struct sockaddr*)&server_addr,
+            sizeof(server_addr)
         );
 
         ssize_t rx_bytes = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
 
         if (rx_bytes >= 2 && rx_buffer[0] == MSG_DATA && rx_buffer[1] == session_id) {
-            // Success, rx_buffer[2...] contains CRSF frame from Ground
-            // Forwarding it to FC UART
+            // Success, rx_buffer[2...] contains payload from Server
             // ...
         }
 
-        // 4 ms cycle step for matching 250 Hz rate (CRSF 400k baud rate)
+        // 4 ms cycle step for matching 250 Hz rate
         usleep(4000);
     }
 
