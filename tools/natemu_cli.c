@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
     uint32_t rebind_every_ms = 0;
     static char server_ip[64];
 
+    setvbuf(stdout, NULL, _IOLBF, 0); // Every log line shows up at once, also when written to a file
     natemu_config_default(&cfg);
     cfg.verbose = true;
 
@@ -93,7 +94,6 @@ int main(int argc, char *argv[]) {
     }
 
     printf("[NAT] Listening on 127.0.0.1:%u, forwarding to %s:%u\n", cfg.inside_port, cfg.server_ip, cfg.server_port);
-    fflush(stdout);
 
     uint64_t next_rebind = rebind_every_ms ? now_ms() + rebind_every_ms : 0;
     struct timespec pause = { 0, 200000 }; // 0.2 ms keeps the added delay small
@@ -106,7 +106,6 @@ int main(int argc, char *argv[]) {
             next_rebind += rebind_every_ms;
         }
 
-        fflush(stdout);
         nanosleep(&pause, NULL);
     }
 }

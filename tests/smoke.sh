@@ -23,13 +23,13 @@ fail() {
     exit 1
 }
 
-stdbuf -oL bin/server > "$log_dir/server.log" 2>&1 &
+bin/server > "$log_dir/server.log" 2>&1 &
 server_pid=$!
 sleep 0.5
 
 # The client runs forever, so a timeout (exit status 124) is the expected outcome.
 status=0
-timeout 2 stdbuf -oL bin/client 127.0.0.1 > "$log_dir/client.log" 2>&1 || status=$?
+timeout 2 bin/client 127.0.0.1 > "$log_dir/client.log" 2>&1 || status=$?
 
 [ "$status" -eq 124 ] || fail "client exited with status $status before the timeout"
 kill -0 "$server_pid" 2>/dev/null || fail "server is not running"

@@ -23,15 +23,15 @@ fail() {
     exit 1
 }
 
-stdbuf -oL bin/server 16000 > "$log_dir/server.log" 2>&1 &
+bin/server 16000 > "$log_dir/server.log" 2>&1 &
 pids="$pids $!"
-stdbuf -oL bin/natemu --listen 16001 --server 127.0.0.1:16000 --delay 5 --jitter 2 --rebind-every 700 > "$log_dir/natemu.log" 2>&1 &
+bin/natemu --listen 16001 --server 127.0.0.1:16000 --delay 5 --jitter 2 --rebind-every 700 > "$log_dir/natemu.log" 2>&1 &
 pids="$pids $!"
 sleep 0.5
 
 # The client runs forever, so a timeout (exit status 124) is the expected outcome.
 status=0
-timeout 3 stdbuf -oL bin/client 127.0.0.1 16001 > "$log_dir/client.log" 2>&1 || status=$?
+timeout 3 bin/client 127.0.0.1 16001 > "$log_dir/client.log" 2>&1 || status=$?
 
 [ "$status" -eq 124 ] || fail "client exited with status $status before the timeout"
 grep -q "connected. Session" "$log_dir/server.log" || fail "server did not accept the client"

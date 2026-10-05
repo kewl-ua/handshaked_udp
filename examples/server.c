@@ -7,6 +7,8 @@
 
 // Usage: server [port]
 int main(int argc, char *argv[]) {
+    setvbuf(stdout, NULL, _IOLBF, 0); // Every log line shows up at once, also when written to a file
+
     uint16_t port = argc > 1 ? (uint16_t)atoi(argv[1]) : HUDP_DEFAULT_PORT;
     hudp_t *h = hudp_server_new(port, NULL);
 

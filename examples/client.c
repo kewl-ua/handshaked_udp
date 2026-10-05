@@ -11,6 +11,8 @@
 
 // Usage: client [server_ip] [port]
 int main(int argc, char *argv[]) {
+    setvbuf(stdout, NULL, _IOLBF, 0); // Every log line shows up at once, also when written to a file
+
     const char *server_ip = argc > 1 ? argv[1] : SERVER_IP;
     uint16_t port = argc > 2 ? (uint16_t)atoi(argv[2]) : HUDP_DEFAULT_PORT;
     hudp_t *h = hudp_client_new(server_ip, port, NULL);
