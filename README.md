@@ -1,5 +1,7 @@
 # Handshaked UDP
 
+[![CI](https://github.com/kewl-ua/handshaked_udp/actions/workflows/ci.yml/badge.svg)](https://github.com/kewl-ua/handshaked_udp/actions/workflows/ci.yml)
+
 A minimalist network protocol written in pure C (POSIX Sockets) for low-latency bidirectional UDP streams between a client behind carrier-grade NAT and a server with a public IP.
 
 It handles CGNAT directly, without relying on third-party VPNs, proxies, or relay servers.
@@ -111,3 +113,19 @@ The header is packed down to a mere **2 bytes** to minimize overhead at high pac
 | `MSG_CONN_REQ` | `0x01` | client → server | none             |
 | `MSG_CONN_ACK` | `0x02` | server → client | none             |
 | `MSG_DATA`     | `0x03` | both            | application data |
+
+---
+
+## 🔧 Build & Run
+
+Linux / POSIX with `gcc` or `clang`:
+
+```sh
+make                        # builds bin/server and bin/client
+./bin/server                # on the host with the public IP, listens on UDP 5555
+./bin/client 203.0.113.10   # behind CGNAT, pass the server's public IP
+```
+
+`sh tests/smoke.sh` starts both on localhost and checks that the handshake completes.
+
+On Windows, build in the **MSYS** shell of [MSYS2](https://www.msys2.org/) (`pacman -S gcc make`). The MinGW environments have no POSIX sockets.

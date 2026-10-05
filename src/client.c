@@ -12,10 +12,11 @@
 
 #include "protocol.h"
 
-#define SERVER_IP "10.255.0.2" // Server public IP
+#define SERVER_IP "10.255.0.2" // Default server public IP, overridden by argv[1]
 
-int main() {
+int main(int argc, char *argv[]) {
     struct timeval tv;
+    const char *server_ip = argc > 1 ? argv[1] : SERVER_IP;
 
     srand(time(NULL));
     uint8_t session_id = (rand() % 254) + 1; // Session ID [1; 255]
@@ -33,14 +34,19 @@ int main() {
     
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(DEFAULT_PORT);
-    inet_pton(AF_INET, SERVER_IP, &server_addr.sin_addr);
+
+    if (inet_pton(AF_INET, server_ip, &server_addr.sin_addr) != 1) {
+        fprintf(stderr, "Invalid server IP: %s\n", server_ip);
+        close(sock);
+        return 1;
+    }
 
     // 200 ms timeout for Handshake stage
     tv.tv_sec = 0;
     tv.tv_usec = 200000;
     setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
-    printf("[CLIENT] Knocking the server %s... Session %d\n", SERVER_IP, session_id);
+    printf("[CLIENT] Knocking the server %s... Session %d\n", server_ip, session_id);
 
     // 1. Handshake
     bool connected = false;
