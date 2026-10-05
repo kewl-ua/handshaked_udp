@@ -33,7 +33,7 @@ timeout 2 stdbuf -oL bin/client 127.0.0.1 > "$log_dir/client.log" 2>&1 || status
 
 [ "$status" -eq 124 ] || fail "client exited with status $status before the timeout"
 kill -0 "$server_pid" 2>/dev/null || fail "server is not running"
-grep -q "Received CONN_REQ" "$log_dir/server.log" || fail "server did not receive CONN_REQ"
+grep -q "connected. Session" "$log_dir/server.log" || fail "server did not accept the client"
 grep -q "Connection established" "$log_dir/client.log" || fail "client did not complete the handshake"
 
 echo "OK: handshake completed, both sides kept running"

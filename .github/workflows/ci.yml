@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build (${{ matrix.cc }})
+    name: Build and test (${{ matrix.cc }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -15,17 +15,23 @@ jobs:
         cc: [gcc, clang]
     steps:
       - uses: actions/checkout@v5
-      - name: Build with warnings as errors
-        run: make CC=${{ matrix.cc }} EXTRA_CFLAGS=-Werror
-      - name: Smoke test
-        run: sh tests/smoke.sh
+      - name: Build with warnings as errors, run tests
+        run: make test CC=${{ matrix.cc }} EXTRA_CFLAGS=-Werror
 
   sanitizers:
     name: Sanitizers (ASan + UBSan)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Build with sanitizers
-        run: make EXTRA_CFLAGS="-O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=undefined"
-      - name: Smoke test
-        run: sh tests/smoke.sh
+      - name: Build with sanitizers, run tests
+        run: make test EXTRA_CFLAGS="-O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=undefined"
+
+  bench:
+    name: Benchmark behind the CGNAT emulator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build
+        run: make all bin/bench
+      - name: Run the benchmark, publish the table in the run summary
+        run: ./bin/bench | tee -a "$GITHUB_STEP_SUMMARY"
