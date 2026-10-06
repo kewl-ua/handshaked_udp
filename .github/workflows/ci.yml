@@ -26,6 +26,14 @@ jobs:
       - name: Build with sanitizers, run tests
         run: make test EXTRA_CFLAGS="-O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=undefined"
 
+  docs:
+    name: Documentation links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check every relative link and anchor
+        run: make docs-check
+
   bench:
     name: Benchmark behind the CGNAT emulator
     runs-on: ubuntu-latest
