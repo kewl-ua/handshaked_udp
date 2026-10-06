@@ -80,6 +80,7 @@ test: all $(TARGET_TEST) $(TARGET_TEST_NAT)
 	./$(TARGET_TEST_NAT)
 	sh $(TESTS_DIR)/smoke.sh
 	sh $(TESTS_DIR)/smoke_nat.sh
+	CC="$(CC)" CFLAGS="$(CFLAGS)" sh $(TESTS_DIR)/readme_examples.sh
 
 bench: all $(TARGET_BENCH)
 	./$(TARGET_BENCH)
