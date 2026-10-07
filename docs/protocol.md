@@ -10,7 +10,7 @@ Standard UDP communication topologies fail when one side sits behind a provider-
 
 1. **No public IP on the client.** Satellite and cellular carriers (Starlink, LTE/5G) use [carrier-grade NAT](https://en.wikipedia.org/wiki/Carrier-grade_NAT) ([RFC 6888](https://www.rfc-editor.org/rfc/rfc6888)). The client has no public address of its own, so nothing on the internet can open a connection to it.
 2. **Unstable port mappings.** The NAT closes UDP mappings that go idle and may give the client a new external port mid-session ([RFC 4787](https://www.rfc-editor.org/rfc/rfc4787) describes how NATs treat UDP).
-3. **Latency-critical streams.** For real-time state only the most recent packet matters. Overlay networks (VPNs, WireGuard, Tailscale) add a layer to run and sometimes a relay in the path, and reliable transports (TCP, KCP) add jitter by retransmitting packets that are already stale.
+3. **Latency-critical streams.** For real-time state only the most recent packet may matter. Reliable ordered delivery can hold fresh data behind lost data. WireGuard preserves UDP delivery semantics and supports NAT keep-alives and roaming; ICE selects connectivity paths. HUDP targets a simpler application-to-public-server design. See [the comparison](comparison.md) for the tradeoffs.
 
 ```mermaid
 flowchart LR

@@ -4,6 +4,8 @@
 
 How Handshaked UDP holds a real-time stream through carrier-grade NAT, next to plain UDP in the same conditions. Both run behind the [CGNAT emulator](emulator.md).
 
+For a design comparison with WireGuard and ICE, see [Choosing HUDP, WireGuard or ICE](comparison.md). Neither is implemented in this benchmark; the fixed-address plain UDP baseline does not model their connectivity management.
+
 ## What It Measures
 
 [`bench/bench.c`](../bench/bench.c) streams at 250 Hz in both directions at once, like control one way and telemetry the other, with 26-byte payloads, for 8 s per case. Every packet carries its sequence number and its send time. Client, server and emulator run in one process on one clock, so the receiving side measures directly:

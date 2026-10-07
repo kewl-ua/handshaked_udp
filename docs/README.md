@@ -11,6 +11,7 @@ Start at the top and stop when you have what you need.
 | [API Reference](api.md)                | look up a function, an event, an error or a timing                       |
 | [Protocol](protocol.md)                | see why plain UDP fails behind CGNAT and what goes over the wire         |
 | [CGNAT Emulator](emulator.md)          | test on one machine with port changes, expiring mappings, delay and loss |
+| [Comparison](comparison.md) | choose between HUDP, WireGuard and ICE using topology, security and overhead |
 | [Benchmark](benchmark.md)              | compare hudp with plain UDP under five network conditions               |
 | [Development](development.md)          | find your way around the repository, the tests and CI                   |
 | [FAQ](faq.md)                          | get short answers: Starlink, STUN/TURN, VPNs, security, bandwidth       |

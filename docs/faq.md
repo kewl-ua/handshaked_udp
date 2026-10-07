@@ -8,11 +8,11 @@ You can't connect to it directly: it has no public address of its own, and the c
 
 ## How is this different from STUN, TURN and ICE (WebRTC)?
 
-[ICE](https://www.rfc-editor.org/rfc/rfc8445) connects two peers that are both behind NAT: [STUN](https://www.rfc-editor.org/rfc/rfc8489) to learn public addresses, [TURN](https://www.rfc-editor.org/rfc/rfc8656) to relay when hole punching fails. Here one side has a public IP, so a client-initiated session is enough. There is no STUN or TURN server to run, and the header is [2 bytes](protocol.md#packet-format).
+[ICE](https://www.rfc-editor.org/rfc/rfc8445.html) gathers candidates and checks paths between peers, including peers behind NAT; [TURN](https://www.rfc-editor.org/rfc/rfc8656.html) can supply relay candidates. ICE itself neither encrypts application data nor adds a per-message header on a direct UDP path. HUDP assumes a known public server and manages a session with a [2-byte header](protocol.md#packet-format), avoiding candidate negotiation. WebRTC adds other transports and security on top of ICE. See [the comparison](comparison.md).
 
 ## Why not a VPN such as WireGuard or Tailscale, or just TCP?
 
-A VPN works, but it is another layer to run and keep up, and when its own hole punching fails the traffic goes through a relay. TCP retransmits lost segments and holds back everything behind them, so a stale packet delays the fresh ones. For a stream where only the newest state matters, a lost packet should simply be skipped, which plain UDP does.
+[WireGuard](https://www.wireguard.com/) offers encryption, authentication and endpoint roaming, with [persistent keep-alive](https://www.wireguard.com/quickstart/) for NAT. A client reaching a public WireGuard server needs no relay, and UDP inside the tunnel remains unreliable. HUDP can make sense when you control the application, need a small datagram session API rather than an IP tunnel, and can accept its security limitations. TCP retransmits lost data and preserves order, which can delay fresh state. See [selection criteria and packet overhead](comparison.md).
 
 ## Does it work behind a symmetric NAT?
 

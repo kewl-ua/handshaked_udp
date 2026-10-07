@@ -18,7 +18,7 @@ It is a minimalist network protocol with `libhudp`, a small C library (POSIX soc
 
 ## 🌐 Why
 
-A device on Starlink or LTE/5G sits behind [carrier-grade NAT](https://en.wikipedia.org/wiki/Carrier-grade_NAT). It has no public address, so nothing can connect to it. The NAT closes UDP mappings that go idle and may change the device's port in the middle of a session. Plain UDP loses the stream, while a VPN or TCP adds a layer, a relay or retransmissions of packets that are already stale. → [The problem in detail](docs/protocol.md#the-problem)
+A device on Starlink or LTE/5G sits behind [carrier-grade NAT](https://en.wikipedia.org/wiki/Carrier-grade_NAT). It has no public address, so nothing can connect to it. The NAT closes UDP mappings that go idle and may change the device's port in the middle of a session. A fixed-address UDP application can lose the return stream. HUDP maintains an application session; WireGuard provides an encrypted IP tunnel; ICE selects peer paths. TCP provides reliable ordered delivery, which can delay fresh state behind lost data. → [The problem in detail](docs/protocol.md#the-problem)
 
 ## 🛠 How It Works
 
@@ -50,7 +50,27 @@ Measured behind the [CGNAT emulator](docs/emulator.md), 250 Hz both ways, 20 ± 
 | Client idle for 4 s          | 98.5 %, longest gap 14 ms                   | 49.2 %, never recovered   |
 | 2 s link outage              | back about 0.3 s after the link returns     | never recovered           |
 
-→ [Full benchmark](docs/benchmark.md)
+→ [Full benchmark](docs/benchmark.md) · [HUDP vs WireGuard vs ICE](docs/comparison.md)
+
+## Choosing HUDP, WireGuard or ICE
+
+| Choose | When it fits |
+|---|---|
+| **HUDP** | A C application sending small, loss-tolerant datagrams to a known public server; you want session events and minimal framing, and can accept v1's lack of authentication and encryption. |
+| **WireGuard** | An authenticated encrypted IP tunnel for existing applications, with NAT keep-alives and authenticated endpoint roaming. |
+| **ICE** | Discovering and checking peer paths, including peers behind NAT, with TURN relay candidates when direct connectivity fails. |
+
+HUDP adds **2 bytes** per datagram. WireGuard carries an inner IP packet plus encrypted tunnel framing. ICE itself does **not** encrypt application data or add a header to every direct-path UDP message. HUDP's simpler deployment can be useful even when packet-size savings are small; lack of encryption is a tradeoff, not evidence of lower latency.
+
+For our 26-byte payload example over IPv4, calculated packet sizes are **56 bytes for HUDP**, **124 for UDP inside WireGuard**, and **54 for raw UDP on a direct ICE-selected path**. These are packet-size calculations, not measured WireGuard/ICE benchmarks. See [assumptions, official sources and selection criteria](docs/comparison.md).
+
+Examples of that choice:
+
+- **HUDP:** a Linux sensor on LTE sends non-sensitive live readings to your public server; missed samples are acceptable and the C application handles stale data. Also fits a controlled NAT test rig exchanging synthetic state.
+- **WireGuard:** an LTE gateway needs protected SSH, updates and monitoring through one tunnel, using existing applications.
+- **ICE / WebRTC:** two browsers behind different NATs need a call, with direct-path discovery and TURN fallback.
+
+See [worked application scenarios and how changing requirements changes the choice](docs/comparison.md#application-examples).
 
 ## 🚀 Quick Start
 
@@ -95,6 +115,7 @@ for (;;) {
 | [API Reference](docs/api.md)                | every function, event, state, error and constant                    |
 | [Protocol](docs/protocol.md)                | the problem, handshake, migration, session lifetime, packet format, RFCs |
 | [CGNAT Emulator](docs/emulator.md)          | test on one machine with port changes, expiring mappings, delay and loss |
+| [Comparison](docs/comparison.md) | HUDP, WireGuard and ICE: topology, security, packet overhead and when to use each |
 | [Benchmark](docs/benchmark.md)              | hudp against plain UDP in five scenarios                            |
 | [Development](docs/development.md)          | repository layout, make targets, tests, CI, Windows                 |
 | [FAQ](docs/faq.md)                          | Starlink, STUN/TURN/ICE, VPNs, symmetric NAT, security, bandwidth   |
